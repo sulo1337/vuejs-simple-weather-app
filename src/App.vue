@@ -18,7 +18,7 @@
             {{currentTemp}}°
           </template>
           <template v-slot:lead>
-            Feels like: {{feelsLike}}
+            Feels like: {{feelsLike}}°
           </template>
           <p>{{this.weather.description}}</p>
           <b-row>
