@@ -4,13 +4,13 @@
     <div v-if="errorStr">
         Sorry, but the following error has occurred: {{ errorStr }}
     </div>
-    <div>
+    <div v-if="getLocation()">
         Your Coordinates: {{ latitude.toFixed(5) }}, {{ longitude.toFixed(5) }}
         <br />
         Updated: {{ updatedAt }}
         <br />
         <br />
-        <div v-if="getWeather()">
+        <div>
             <b-jumbotron id="jumbo">
                 <template v-slot:header>
                     <img :src="iconUrl" />
@@ -18,7 +18,7 @@
                     {{ currentTemp }}°
                 </template>
                 <template v-slot:lead> Feels like: {{ feelsLike }}° </template>
-                <p>{{ this.weather.description }}</p>
+                <p>{{ this.desc }}</p>
                 <b-row>
                     <b-col>
                         <img src="https://img.icons8.com/color/50/000000/hot.png" />{{
@@ -58,102 +58,115 @@ export default {
         return {
             ipAddr: null,
             updatedAt: null,
-            longitude: null,
-            latitude: null,
-            location: null,
+            longitude: 0,
+            latitude: 0,
             errorStr: null,
             weatherInfo: null,
             apiurl: null,
             apikey: "584ec8708561cc17a1ca8cfc484e65ee",
             weatherFetched: false,
             weather: null,
-            currentTemp: null,
-            sunrise: null,
+            currentTemp: 0,
+            sunrise: 0,
             sunriseUTC: null,
-            sunset: null,
+            sunset: 0,
             sunsetUTC: null,
             wind: null,
             winddir: null,
             humidity: null,
-            feelsLike: null,
+            feelsLike: 0,
             iconUrl: null,
             weatherText: null,
             unit: true,
-            maxTemp: null,
-            minTemp: 0
+            maxTemp: 0,
+            minTemp: 0,
+            desc: ""
         };
     },
     created() {
-        fetch("https://api.ipify.org?format=json")
-            .then(x => {
-                return x.json();
-            })
-            .then(({
-                ip
-            }) => {
-                this.ipAddr = ip;
-                console.log(ip);
-                var key = "900dbabca264cc47bb4012d58476d92a";
-                var url =
-                    "http://api.ipstack.com/" + this.ipAddr + "?access_key=" + key;
-                fetch(url)
-                    .then(response => {
-                        return response.json();
-                    })
-                    .then(data => {
-                        this.latitude = data.latitude;
-                        this.longitude = data.longitude;
-                    });
-            });
+        this.getLocation();
     },
     methods: {
-        getWeather: function () {
-            if (!this.weatherFetched) {
-                this.apiurl =
-                    "https://api.openweathermap.org/data/2.5/weather?lat=" +
-                    this.latitude +
-                    "&lon=" +
-                    this.longitude +
-                    "&appid=" +
-                    this.apikey;
-                fetch(this.apiurl)
-                    .then(response => {
-                        return response.json();
-                    })
-                    .then(data => {
-                        this.weatherInfo = data;
-                        this.currentTemp = (data.main.temp - 273).toFixed(1);
-                        this.feelsLike = (data.main.feels_like - 273).toFixed(1);
-                        this.sunrise = data.sys.sunrise;
-                        this.sunset = data.sys.sunset;
-                        this.wind = data.wind.speed;
-                        this.winddir = data.wind.deg;
-                        this.humidity = data.main.humidity;
-                        this.weather = data.weather[0];
-                        this.iconUrl =
-                            "http://openweathermap.org/img/wn/" +
-                            data.weather[0].icon +
-                            "@2x.png";
-                        this.maxTemp = (data.main.temp_max - 273).toFixed(1);
-                        this.minTemp = (data.main.temp_min - 273).toFixed(1);
-                        var currentdate = new Date();
-                        this.updatedAt =
-                            currentdate.getDate() +
-                            "/" +
-                            (currentdate.getMonth() + 1) +
-                            "/" +
-                            currentdate.getFullYear() +
-                            " @ " +
-                            currentdate.getHours() +
-                            ":" +
-                            currentdate.getMinutes() +
-                            ":" +
-                            currentdate.getSeconds();
-                    });
-                this.weatherFetched = true;
+        getLocation: async function () {
+
+            const getIpAddr = async () => {
+                let response = await fetch("https://api.ipify.org?format=json");
+                let data = await response.json();
+                return data;
             }
-            this.postProcess();
+
+            await getIpAddr()
+                .then(data => {
+                    this.ipAddr = data.ip;
+                });
+
+            // async function getLatLong() {
+            //     let key = "900dbabca264cc47bb4012d58476d92a";
+            //     let url =
+            //     "http://api.ipstack.com/" + /**this does not work, this refers to local variable**/ this.ipAddr + "?access_key=" + key;
+            //     let response = await fetch(url);
+            //     let data = await response.json();
+            //     return data;
+            // }
+
+            const getLatLong = async () => {
+                let key = "900dbabca264cc47bb4012d58476d92a";
+                let url =
+                    "http://api.ipstack.com/" + this.ipAddr + "?access_key=" + key;
+                let response = await fetch(url);
+                let data = await response.json();
+                return data;
+            }
+
+            await getLatLong()
+                .then(data => {
+                    this.latitude = data.latitude;
+                    this.longitude = data.longitude;
+                });
+
+            await this.getWeather();
             return true;
+        },
+        getWeather: async function () {
+            let url =
+                "https://api.openweathermap.org/data/2.5/weather?lat=" +
+                this.latitude +
+                "&lon=" +
+                this.longitude +
+                "&appid=" +
+                this.apikey;
+            let response = await fetch(url);
+            let data = await response.json();
+            this.weatherInfo = data;
+            this.currentTemp = (data.main.temp - 273).toFixed(1);
+            this.feelsLike = (data.main.feels_like - 273).toFixed(1);
+            this.sunrise = data.sys.sunrise;
+            this.sunset = data.sys.sunset;
+            this.wind = data.wind.speed;
+            this.winddir = data.wind.deg;
+            this.humidity = data.main.humidity;
+            this.weather = data.weather[0];
+            this.iconUrl =
+                "http://openweathermap.org/img/wn/" +
+                data.weather[0].icon +
+                "@2x.png";
+            this.maxTemp = (data.main.temp_max - 273).toFixed(1);
+            this.minTemp = (data.main.temp_min - 273).toFixed(1);
+            var currentdate = new Date();
+            this.updatedAt =
+                currentdate.getDate() +
+                "/" +
+                (currentdate.getMonth() + 1) +
+                "/" +
+                currentdate.getFullYear() +
+                " @ " +
+                currentdate.getHours() +
+                ":" +
+                currentdate.getMinutes() +
+                ":" +
+                currentdate.getSeconds();
+            this.weatherFetched = true;
+            this.postProcess();
         },
         postProcess: function () {
             String.prototype.capitalize = function () {

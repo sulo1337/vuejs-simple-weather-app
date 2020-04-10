@@ -3,13 +3,16 @@ var webpack = require('webpack')
 const ExtractTextPlugin = require("extract-text-webpack-plugin")
 
 module.exports = {
-  entry: './src/main.js',
+  entry: ['babel-polyfill', './src/main.js'],
   output: {
     path: path.resolve(__dirname, './dist'),
     publicPath: '/dist/',
     filename: 'build.js'
   },
   module: {
+    loaders: [
+      { test: /\.jsx?$/, loader: 'babel', }
+    ],
     rules: [
       {
         test: /\.vue$/,
