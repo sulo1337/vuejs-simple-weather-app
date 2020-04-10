@@ -4,7 +4,7 @@
      <div v-if="errorStr">
       Sorry, but the following error has occurred: {{errorStr}}
      </div>
-     <div v-if="location">
+     <div>
       Your Coordinates: {{latitude.toFixed(5)}}, {{longitude.toFixed(5)}}
       <br/>
       Updated: {{updatedAt}}  
@@ -49,6 +49,7 @@ export default {
   name: 'app',
   data () {
     return {
+      ipAddr: null,
       updatedAt: null,
       longitude: null,
       latitude: null,
@@ -76,41 +77,42 @@ export default {
     }
   },
   created(){
-    if(!("geolocation" in navigator)) {
-      this.errorStr = 'Geolocation is not available.';
-      return;
-    }
-    // get position
-    navigator.geolocation.getCurrentPosition(pos => {
-      this.location = pos;
-      this.longitude = pos.coords.longitude;
-      this.latitude = pos.coords.latitude;
-      this.apiurl = "https://api.openweathermap.org/data/2.5/onecall?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&appid="+this.apikey;
-
-    }, err => {
-      this.errorStr = err.message;
-    })
+    fetch('https://api.ipify.org?format=json')
+    .then((x) => {return x.json();})
+    .then(({ ip }) => {
+    this.ipAddr = ip;
+    console.log(ip);
+    var key = "900dbabca264cc47bb4012d58476d92a";
+      var url = "http://api.ipstack.com/"+this.ipAddr+"?access_key="+key;
+      fetch(url)
+      .then((response) => {return response.json();})
+      .then((data) => {
+      this.latitude = data.latitude;
+      this.longitude = data.longitude;
+    });
+    });
   },
   methods: {
     getWeather: function(){
       if(!this.weatherFetched){
+        this.apiurl = "https://api.openweathermap.org/data/2.5/weather?lat="+this.latitude+"&lon="+this.longitude+"&appid="+this.apikey;
         fetch(this.apiurl)
       .then((response) => {
         return response.json();
       })
       .then((data) => {
         this.weatherInfo = data;
-        this.currentTemp = (data.current.temp-273).toFixed(1);
-        this.feelsLike = (data.current.feels_like-273).toFixed(1);
-        this.sunrise = data.current.sunrise;
-        this.sunset = data.current.sunset;
-        this.wind = data.current.wind_speed;
-        this.winddir = data.current.wind_deg;
-        this.humidity = data.current.humidity;
-        this.weather = data.current.weather[0];
-        this.iconUrl = "http://openweathermap.org/img/wn/"+data.current.weather[0].icon+"@2x.png"
-        this.maxTemp = (data.daily[0].temp.max-273).toFixed(1);
-        this.minTemp = (data.daily[0].temp.min-273).toFixed(1);
+        this.currentTemp = (data.main.temp-273).toFixed(1);
+        this.feelsLike = (data.main.feels_like-273).toFixed(1);
+        this.sunrise = data.sys.sunrise;
+        this.sunset = data.sys.sunset;
+        this.wind = data.wind.speed;
+        this.winddir = data.wind.deg;
+        this.humidity = data.main.humidity;
+        this.weather = data.weather[0];
+        this.iconUrl = "http://openweathermap.org/img/wn/"+data.weather[0].icon+"@2x.png"
+        this.maxTemp = (data.main.temp_max-273).toFixed(1);
+        this.minTemp = (data.main.temp_min-273).toFixed(1);
         var currentdate = new Date();
         this.updatedAt =currentdate.getDate() + "/"
                 + (currentdate.getMonth()+1)  + "/" 
