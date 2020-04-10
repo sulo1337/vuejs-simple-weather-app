@@ -72,7 +72,7 @@ export default {
       weatherText: null,
       unit: true,
       maxTemp: null,
-      minTemp: null,
+      minTemp: 0,
     }
   },
   created(){
