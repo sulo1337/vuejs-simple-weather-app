@@ -3,7 +3,6 @@ import BootstrapVue from "bootstrap-vue"
 import App from './App.vue'
 import "bootstrap/dist/css/bootstrap.min.css"
 import "bootstrap-vue/dist/bootstrap-vue.css"
-import 'bootstrap-vue/dist/bootstrap-vue-icons.min.css'
 
 // import { library } from '@fortawesome/fontawesome-svg-core'
 // import { faS } from '@fortawesome/free-solid-svg-icons'
